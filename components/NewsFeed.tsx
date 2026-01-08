@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { NewsArticle, NewsCategory, NewsSource, SortOption, ViewMode } from '@/types/news';
 import { NewsCard } from './NewsCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SourceFilter } from './SourceFilter';
 import { SearchBar } from './SearchBar';
 import { SortControls } from './SortControls';
+import { Pagination } from './Pagination';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
@@ -22,7 +23,10 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
   const { preferences, updatePreferences, loaded } = useUserPreferences([NEWS_SOURCES[0].value]);
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const { isRead, readCount } = useReadingHistory();
+  
+  const ITEMS_PER_PAGE = 12;
 
   // Extract preferences for easier access
   const sortBy = preferences.sortBy;
@@ -100,6 +104,26 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     return sorted;
   }, [initialArticles, selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly, isRead]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly]);
+
+  // Paginate articles
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredArticles.slice(startIndex, endIndex);
+  }, [filteredArticles, currentPage]);
+
+  const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of news feed
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
@@ -130,7 +154,7 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''}
+            {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''} found
             {selectedSources.length < NEWS_SOURCES.length &&
               ` from ${selectedSources.length} source${selectedSources.length !== 1 ? 's' : ''}`
             }
@@ -158,19 +182,31 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           </p>
         </div>
       ) : (
-        <div
-          className={
-            viewMode === 'grid'
-              ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
-              : viewMode === 'list'
-              ? 'flex flex-col gap-4'
-              : 'flex flex-col gap-2'
-          }
-        >
-          {filteredArticles.map((article) => (
-            <NewsCard key={article.id} article={article} viewMode={viewMode} />
-          ))}
-        </div>
+        <>
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
+                : viewMode === 'list'
+                ? 'flex flex-col gap-4'
+                : 'flex flex-col gap-2'
+            }
+          >
+            {paginatedArticles.map((article) => (
+              <NewsCard key={article.id} article={article} viewMode={viewMode} />
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalItems={filteredArticles.length}
+            />
+          )}
+        </>
       )}
     </div>
   );
