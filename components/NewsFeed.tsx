@@ -16,7 +16,7 @@ interface NewsFeedProps {
 export function NewsFeed({ initialArticles }: NewsFeedProps) {
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('All');
   const [selectedSources, setSelectedSources] = useState<NewsSource[]>(
-    NEWS_SOURCES.map(s => s.value)
+    [NEWS_SOURCES[0].value] // Only first source selected by default
   );
   const [searchQuery, setSearchQuery] = useState('');
 

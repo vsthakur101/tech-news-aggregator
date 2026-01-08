@@ -24,6 +24,12 @@ const SOURCE_LABELS: Record<string, string> = {
   cloudflare: 'Cloudflare',
   reddit: 'Reddit',
   medium: 'Medium',
+  bleepingcomputer: 'Bleeping Computer',
+  securityweek: 'SecurityWeek',
+  thehackernews: 'The Hacker News',
+  cisa: 'CISA Alerts',
+  githubadvisory: 'GitHub Security',
+  nvd: 'NVD/CVE',
 };
 
 export function NewsCard({ article }: NewsCardProps) {
