@@ -39,6 +39,15 @@ export type NewsCategory =
   | 'Mobile'
   | 'Open Source';
 
+export type SortOption = 'date' | 'source' | 'title';
+export type ViewMode = 'grid' | 'list' | 'compact';
+
+export interface ReadArticle {
+  id: string;
+  readAt: string;
+  url: string;
+}
+
 export const NEWS_CATEGORIES: NewsCategory[] = [
   'All',
   'Security',

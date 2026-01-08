@@ -1,32 +1,53 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { NewsArticle, NewsCategory, NewsSource } from '@/types/news';
+import { NewsArticle, NewsCategory, NewsSource, SortOption, ViewMode } from '@/types/news';
 import { NewsCard } from './NewsCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SourceFilter } from './SourceFilter';
 import { SearchBar } from './SearchBar';
+import { SortControls } from './SortControls';
 import { Skeleton } from './ui/skeleton';
+import { Button } from './ui/button';
+import { Eye, EyeOff } from 'lucide-react';
 import { NEWS_SOURCES } from '@/types/news';
+import { useReadingHistory } from '@/hooks/useReadingHistory';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 interface NewsFeedProps {
   initialArticles: NewsArticle[];
 }
 
 export function NewsFeed({ initialArticles }: NewsFeedProps) {
+  const { preferences, updatePreferences, loaded } = useUserPreferences([NEWS_SOURCES[0].value]);
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('All');
-  const [selectedSources, setSelectedSources] = useState<NewsSource[]>(
-    [NEWS_SOURCES[0].value] // Only first source selected by default
-  );
   const [searchQuery, setSearchQuery] = useState('');
+  const { isRead, readCount } = useReadingHistory();
+
+  // Extract preferences for easier access
+  const sortBy = preferences.sortBy;
+  const viewMode = preferences.viewMode;
+  const showUnreadOnly = preferences.showUnreadOnly;
+  const selectedSources = preferences.selectedSources;
+
+  const handleSortChange = useCallback((newSortBy: SortOption) => {
+    updatePreferences({ sortBy: newSortBy });
+  }, [updatePreferences]);
+
+  const handleViewModeChange = useCallback((newViewMode: ViewMode) => {
+    updatePreferences({ viewMode: newViewMode });
+  }, [updatePreferences]);
+
+  const handleUnreadToggle = useCallback(() => {
+    updatePreferences({ showUnreadOnly: !showUnreadOnly });
+  }, [showUnreadOnly, updatePreferences]);
 
   const handleSourceToggle = useCallback((source: NewsSource) => {
-    setSelectedSources((prev) =>
-      prev.includes(source)
-        ? prev.filter((s) => s !== source)
-        : [...prev, source]
-    );
-  }, []);
+    const newSources = selectedSources.includes(source)
+      ? selectedSources.filter((s) => s !== source)
+      : [...selectedSources, source];
+    updatePreferences({ selectedSources: newSources });
+  }, [selectedSources, updatePreferences]);
 
   const filteredArticles = useMemo(() => {
     let filtered = initialArticles;
@@ -52,8 +73,23 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
       );
     }
 
-    return filtered;
-  }, [initialArticles, selectedCategory, selectedSources, searchQuery]);
+    // Filter unread articles
+    if (showUnreadOnly) {
+      filtered = filtered.filter((article) => !isRead(article.id));
+    }
+
+    // Sort articles
+    const sorted = [...filtered];
+    if (sortBy === 'date') {
+      sorted.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    } else if (sortBy === 'source') {
+      sorted.sort((a, b) => a.source.localeCompare(b.source));
+    } else if (sortBy === 'title') {
+      sorted.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    return sorted;
+  }, [initialArticles, selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -63,6 +99,13 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     <div className="space-y-6">
       <div className="space-y-4">
         <SearchBar onSearch={handleSearch} />
+
+        <SortControls
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+        />
 
         <CategoryFilter
           selectedCategory={selectedCategory}
@@ -74,11 +117,23 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           onSourceToggle={handleSourceToggle}
         />
 
-        <div className="text-sm text-muted-foreground">
-          Showing {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''}
-          {selectedSources.length < NEWS_SOURCES.length &&
-            ` from ${selectedSources.length} source${selectedSources.length !== 1 ? 's' : ''}`
-          }
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''}
+            {selectedSources.length < NEWS_SOURCES.length &&
+              ` from ${selectedSources.length} source${selectedSources.length !== 1 ? 's' : ''}`
+            }
+            {readCount > 0 && ` • ${readCount} read`}
+          </div>
+          <Button
+            variant={showUnreadOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={handleUnreadToggle}
+            className="flex items-center gap-2"
+          >
+            {showUnreadOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {showUnreadOnly ? 'Show All' : 'Unread Only'}
+          </Button>
         </div>
       </div>
 
@@ -92,9 +147,17 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={
+            viewMode === 'grid'
+              ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
+              : viewMode === 'list'
+              ? 'flex flex-col gap-4'
+              : 'flex flex-col gap-2'
+          }
+        >
           {filteredArticles.map((article) => (
-            <NewsCard key={article.id} article={article} />
+            <NewsCard key={article.id} article={article} viewMode={viewMode} />
           ))}
         </div>
       )}

@@ -3,13 +3,16 @@
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { NewsArticle } from '@/types/news';
-import { formatDate, truncateText } from '@/lib/utils';
+import { NewsArticle, ViewMode } from '@/types/news';
+import { formatDate, truncateText, calculateReadingTime } from '@/lib/utils';
 import { BookmarkButton } from './BookmarkButton';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useReadingHistory } from '@/hooks/useReadingHistory';
 
 interface NewsCardProps {
   article: NewsArticle;
+  viewMode?: ViewMode;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -32,11 +35,118 @@ const SOURCE_LABELS: Record<string, string> = {
   nvd: 'NVD/CVE',
 };
 
-export function NewsCard({ article }: NewsCardProps) {
+export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
+  const readingTime = calculateReadingTime(`${article.title} ${article.description}`);
+  const { markAsRead, isRead } = useReadingHistory();
+  const read = isRead(article.id);
+
+  const handleClick = () => {
+    markAsRead(article.id, article.url);
+    window.open(article.url, '_blank', 'noopener,noreferrer');
+  };
+
+  // Compact view - text only, no images, dense
+  if (viewMode === 'compact') {
+    return (
+      <Card
+        className={cn(
+          'group cursor-pointer transition-colors hover:bg-accent',
+          read && 'opacity-60'
+        )}
+        onClick={handleClick}
+      >
+        <CardHeader className="p-4 space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="text-xs">
+                {SOURCE_LABELS[article.source] || article.source}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {article.category}
+              </Badge>
+              <Badge variant="outline" className="text-xs flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {readingTime} min
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(article.publishedAt)}
+              </span>
+            </div>
+            <BookmarkButton articleId={article.id} />
+          </div>
+          <CardTitle className="line-clamp-1 text-base leading-tight">
+            {article.title}
+          </CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  // List view - horizontal layout
+  if (viewMode === 'list') {
+    return (
+      <Card
+        className={cn(
+          'group cursor-pointer transition-all hover:shadow-lg',
+          read && 'opacity-60'
+        )}
+        onClick={handleClick}
+      >
+        <div className="flex flex-row gap-4 p-4">
+          {article.imageUrl && (
+            <div className="relative h-32 w-48 flex-shrink-0 overflow-hidden rounded-lg">
+              <Image
+                src={article.imageUrl}
+                alt={article.title}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+                sizes="192px"
+              />
+            </div>
+          )}
+          <div className="flex-1 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  {SOURCE_LABELS[article.source] || article.source}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {article.category}
+                </Badge>
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {readingTime} min
+                </Badge>
+              </div>
+              <BookmarkButton articleId={article.id} />
+            </div>
+            <CardTitle className="line-clamp-2 text-lg leading-tight">
+              {article.title}
+            </CardTitle>
+            <CardDescription className="line-clamp-2">
+              {truncateText(article.description, 150)}
+            </CardDescription>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {article.author && `By ${article.author} • `}
+                {formatDate(article.publishedAt)}
+              </span>
+              <ExternalLink className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Grid view - default vertical card
   return (
     <Card
-      className="group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]"
-      onClick={() => window.open(article.url, '_blank', 'noopener,noreferrer')}
+      className={cn(
+        'group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]',
+        read && 'opacity-60'
+      )}
+      onClick={handleClick}
     >
       {article.imageUrl && (
         <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
@@ -57,6 +167,10 @@ export function NewsCard({ article }: NewsCardProps) {
             </Badge>
             <Badge variant="outline" className="text-xs">
               {article.category}
+            </Badge>
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {readingTime} min
             </Badge>
           </div>
           <BookmarkButton articleId={article.id} />
