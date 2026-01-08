@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { NewsFeed, NewsFeedSkeleton } from '@/components/NewsFeed';
 import { StreakCardClient } from '@/components/StreakCardClient';
+import { DailyQuoteClient } from '@/components/DailyQuoteClient';
 import { fetchAllNews } from '@/lib/aggregator';
 
 export const revalidate = 300; // Revalidate every 5 minutes
@@ -27,6 +28,7 @@ export default async function HomePage() {
         <div className="lg:col-span-1">
           <div className="sticky top-4 space-y-4">
             <StreakCardClient />
+            <DailyQuoteClient />
           </div>
         </div>
       </div>
