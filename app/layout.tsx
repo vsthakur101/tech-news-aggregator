@@ -7,8 +7,8 @@ import { Header } from "@/components/Header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tech News Aggregator - 11 Sources",
-  description: "Stay updated with tech news from Dev.to, Hacker News, GitHub, Vercel, React, Meta, Google, Cloudflare, Reddit, Medium & more!",
+  title: "Tech & Cybersecurity News Aggregator - 17 Sources",
+  description: "Comprehensive tech & cybersecurity news from 17 sources: Dev.to, Hacker News, GitHub, React, Meta, Google, Cloudflare, Reddit, Medium, Bleeping Computer, SecurityWeek, The Hacker News, CISA, GitHub Security, NVD/CVE & more!",
 };
 
 export default function RootLayout({
@@ -32,8 +32,14 @@ export default function RootLayout({
             </main>
             <footer className="border-t py-6">
               <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-                <p className="mb-1">
-                  Aggregating from <strong>11 sources</strong>: Dev.to, Hacker News, NewsAPI, GitHub, Vercel, React, Meta, Google, Cloudflare, Reddit, Medium
+                <p className="mb-1 font-medium">
+                  Aggregating from <strong>17 sources</strong>
+                </p>
+                <p className="mb-1 text-xs">
+                  <strong>Tech:</strong> Dev.to, Hacker News, GitHub, React, Meta, Google, Cloudflare, Reddit, Medium, NewsAPI
+                </p>
+                <p className="mb-2 text-xs">
+                  <strong>Security:</strong> Bleeping Computer, SecurityWeek, The Hacker News, CISA, GitHub Security, NVD/CVE
                 </p>
                 <p className="text-xs">
                   Built with Next.js 16, TypeScript, and Tailwind CSS

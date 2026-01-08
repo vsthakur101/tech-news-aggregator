@@ -12,11 +12,20 @@ import {
   fetchMediumTech,
 } from "./api/blogs";
 import { fetchRedditPosts } from "./api/reddit";
+import {
+  fetchBleepingComputer,
+  fetchSecurityWeek,
+  fetchTheHackerNews,
+  fetchCISAAlerts,
+  fetchGitHubAdvisories,
+} from "./api/security";
+import { fetchNVDVulnerabilities } from "./api/nvd";
 
 export async function fetchAllNews(): Promise<NewsArticle[]> {
   try {
-    // Fetch from ALL 11 sources in parallel
+    // Fetch from ALL 17 sources in parallel (11 tech + 6 security)
     const results = await Promise.allSettled([
+      // Original sources
       fetchDevToArticles(),
       fetchHackerNewsArticles(),
       fetchNewsAPIArticles(),
@@ -28,6 +37,13 @@ export async function fetchAllNews(): Promise<NewsArticle[]> {
       fetchCloudflareBlog(),
       fetchRedditPosts(),
       fetchMediumTech(),
+      // NEW: Cybersecurity sources
+      fetchBleepingComputer(),
+      fetchSecurityWeek(),
+      fetchTheHackerNews(),
+      fetchCISAAlerts(),
+      fetchGitHubAdvisories(),
+      fetchNVDVulnerabilities(),
     ]);
 
     // Combine all successful results

@@ -10,10 +10,10 @@ export default async function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Latest Tech News from 11 Sources</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Latest Tech & Cybersecurity News from 17 Sources</h2>
         <p className="text-muted-foreground">
-          Curated from Dev.to, Hacker News, GitHub, Vercel Blog, React Blog, Meta Engineering,
-          Google Developers, Cloudflare Blog, Reddit, Medium, and NewsAPI
+          <strong>Tech:</strong> Dev.to, Hacker News, GitHub, React, Meta, Google, Cloudflare, Reddit, Medium, NewsAPI<br />
+          <strong>Security:</strong> Bleeping Computer, SecurityWeek, The Hacker News, CISA Alerts, GitHub Security, NVD/CVE
         </p>
       </div>
 

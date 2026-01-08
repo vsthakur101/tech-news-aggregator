@@ -9,7 +9,13 @@ export type NewsSource =
   | 'google'
   | 'cloudflare'
   | 'reddit'
-  | 'medium';
+  | 'medium'
+  | 'bleepingcomputer'
+  | 'securityweek'
+  | 'thehackernews'
+  | 'cisa'
+  | 'githubadvisory'
+  | 'nvd';
 
 export interface NewsArticle {
   id: string;
@@ -55,6 +61,12 @@ export const NEWS_SOURCES: { value: NewsSource; label: string }[] = [
   { value: 'cloudflare', label: 'Cloudflare Blog' },
   { value: 'reddit', label: 'Reddit' },
   { value: 'medium', label: 'Medium' },
+  { value: 'bleepingcomputer', label: 'Bleeping Computer' },
+  { value: 'securityweek', label: 'SecurityWeek' },
+  { value: 'thehackernews', label: 'The Hacker News' },
+  { value: 'cisa', label: 'CISA Alerts' },
+  { value: 'githubadvisory', label: 'GitHub Security' },
+  { value: 'nvd', label: 'NVD/CVE' },
 ];
 
 // API Response Types
