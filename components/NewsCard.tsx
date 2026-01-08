@@ -9,6 +9,7 @@ import { BookmarkButton } from './BookmarkButton';
 import { ExternalLink, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
+import { useStreak } from '@/hooks/useStreak';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -38,10 +39,12 @@ const SOURCE_LABELS: Record<string, string> = {
 export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
   const readingTime = calculateReadingTime(`${article.title} ${article.description}`);
   const { markAsRead, isRead } = useReadingHistory();
+  const { updateStreak } = useStreak();
   const read = isRead(article.id);
 
   const handleClick = () => {
     markAsRead(article.id, article.url);
+    updateStreak(true); // Update streak when article is read
     window.open(article.url, '_blank', 'noopener,noreferrer');
   };
 

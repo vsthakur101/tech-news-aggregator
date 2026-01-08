@@ -14,6 +14,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { NEWS_SOURCES } from '@/types/news';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useStreak } from '@/hooks/useStreak';
 
 interface NewsFeedProps {
   initialArticles: NewsArticle[];
@@ -25,6 +26,7 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { isRead, readCount } = useReadingHistory();
+  const { updateStreak } = useStreak();
   
   const ITEMS_PER_PAGE = 12;
 

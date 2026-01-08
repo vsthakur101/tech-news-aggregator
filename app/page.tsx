@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { NewsFeed, NewsFeedSkeleton } from '@/components/NewsFeed';
+import { StreakCard } from '@/components/StreakCard';
 import { fetchAllNews } from '@/lib/aggregator';
 
 export const revalidate = 300; // Revalidate every 5 minutes
@@ -17,9 +18,18 @@ export default async function HomePage() {
         </p>
       </div>
 
-      <Suspense fallback={<NewsFeedSkeleton />}>
-        <NewsFeed initialArticles={articles} />
-      </Suspense>
+      <div className="grid lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          <Suspense fallback={<NewsFeedSkeleton />}>
+            <NewsFeed initialArticles={articles} />
+          </Suspense>
+        </div>
+        <div className="lg:col-span-1">
+          <div className="sticky top-4 space-y-4">
+            <StreakCard />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
