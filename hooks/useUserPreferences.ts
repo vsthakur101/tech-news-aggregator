@@ -45,7 +45,7 @@ export function useUserPreferences(initialSources: NewsSource[] = []) {
     } finally {
       setLoaded(true);
     }
-  }, [initialSources]);
+  }, []); // Remove initialSources dependency to prevent infinite loop
 
   // Save preferences to localStorage whenever they change
   useEffect(() => {

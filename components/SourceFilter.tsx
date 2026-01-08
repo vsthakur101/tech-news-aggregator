@@ -7,22 +7,11 @@ import { cn } from '@/lib/utils';
 interface SourceFilterProps {
   selectedSources: NewsSource[];
   onSourceToggle: (source: NewsSource) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
 }
 
-export function SourceFilter({ selectedSources, onSourceToggle }: SourceFilterProps) {
-  const handleSelectAll = () => {
-    NEWS_SOURCES.forEach(({ value }) => {
-      if (!selectedSources.includes(value)) {
-        onSourceToggle(value);
-      }
-    });
-  };
-
-  const handleClearAll = () => {
-    selectedSources.forEach((source) => {
-      onSourceToggle(source);
-    });
-  };
+export function SourceFilter({ selectedSources, onSourceToggle, onSelectAll, onClearAll }: SourceFilterProps) {
 
   return (
     <div className="space-y-2">
@@ -30,13 +19,13 @@ export function SourceFilter({ selectedSources, onSourceToggle }: SourceFilterPr
         <p className="text-sm font-medium">Filter by Source ({selectedSources.length}/{NEWS_SOURCES.length} selected):</p>
         <div className="flex gap-2">
           <button
-            onClick={handleSelectAll}
+            onClick={onSelectAll}
             className="text-xs px-2 py-1 text-primary hover:underline"
           >
             Select All
           </button>
           <button
-            onClick={handleClearAll}
+            onClick={onClearAll}
             className="text-xs px-2 py-1 text-muted-foreground hover:underline"
           >
             Clear All

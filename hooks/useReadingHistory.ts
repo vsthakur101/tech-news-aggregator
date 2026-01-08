@@ -9,18 +9,32 @@ const MAX_HISTORY_SIZE = 1000; // Limit history to last 1000 articles
 export function useReadingHistory() {
   const [readArticles, setReadArticles] = useState<string[]>([]);
 
-  // Load reading history from localStorage on mount
+  // Load reading history from localStorage on mount and sync with changes
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const history: ReadArticle[] = JSON.parse(stored);
-        const articleIds = history.map(item => item.id);
-        setReadArticles(articleIds);
+    const loadHistory = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const history: ReadArticle[] = JSON.parse(stored);
+          const articleIds = history.map(item => item.id);
+          setReadArticles(articleIds);
+        }
+      } catch (error) {
+        console.error('Failed to load reading history:', error);
       }
-    } catch (error) {
-      console.error('Failed to load reading history:', error);
-    }
+    };
+
+    loadHistory();
+
+    // Listen for storage changes from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        loadHistory();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Mark an article as read
@@ -52,8 +66,13 @@ export function useReadingHistory() {
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
-      // Update state
-      setReadArticles(prev => [...prev, articleId]);
+      // Update state immediately
+      setReadArticles(prev => {
+        if (prev.includes(articleId)) {
+          return prev;
+        }
+        return [...prev, articleId];
+      });
     } catch (error) {
       console.error('Failed to mark article as read:', error);
     }

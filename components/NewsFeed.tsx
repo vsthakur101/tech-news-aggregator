@@ -49,6 +49,15 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     updatePreferences({ selectedSources: newSources });
   }, [selectedSources, updatePreferences]);
 
+  const handleSelectAllSources = useCallback(() => {
+    const allSources = NEWS_SOURCES.map(({ value }) => value);
+    updatePreferences({ selectedSources: allSources });
+  }, [updatePreferences]);
+
+  const handleClearAllSources = useCallback(() => {
+    updatePreferences({ selectedSources: [] });
+  }, [updatePreferences]);
+
   const filteredArticles = useMemo(() => {
     let filtered = initialArticles;
 
@@ -89,7 +98,7 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     }
 
     return sorted;
-  }, [initialArticles, selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly]);
+  }, [initialArticles, selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly, isRead]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -115,6 +124,8 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
         <SourceFilter
           selectedSources={selectedSources}
           onSourceToggle={handleSourceToggle}
+          onSelectAll={handleSelectAllSources}
+          onClearAll={handleClearAllSources}
         />
 
         <div className="flex items-center justify-between">
