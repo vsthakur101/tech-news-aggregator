@@ -8,6 +8,7 @@ import { SourceFilter } from './SourceFilter';
 import { SearchBar } from './SearchBar';
 import { SortControls } from './SortControls';
 import { Pagination } from './Pagination';
+import { AdvancedSearchPanel, DateRangeFilter } from './AdvancedSearchPanel';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
@@ -15,6 +16,10 @@ import { NEWS_SOURCES } from '@/types/news';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useStreak } from '@/hooks/useStreak';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { TrendingTopics } from './TrendingTopics';
 
 interface NewsFeedProps {
   initialArticles: NewsArticle[];
@@ -24,10 +29,12 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
   const { preferences, updatePreferences, loaded } = useUserPreferences([NEWS_SOURCES[0].value]);
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilters, setDateFilters] = useState<DateRangeFilter>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const { isRead, readCount } = useReadingHistory();
+  const { isRead, readCount, markAsRead } = useReadingHistory();
   const { updateStreak } = useStreak();
-  
+  const { toggleBookmark } = useBookmarks();
+
   const ITEMS_PER_PAGE = 12;
 
   // Extract preferences for easier access
@@ -88,6 +95,23 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
       );
     }
 
+    // Filter by date range
+    if (dateFilters.dateFrom || dateFilters.dateTo) {
+      filtered = filtered.filter((article) => {
+        const articleDate = new Date(article.publishedAt);
+
+        if (dateFilters.dateFrom && articleDate < dateFilters.dateFrom) {
+          return false;
+        }
+
+        if (dateFilters.dateTo && articleDate > dateFilters.dateTo) {
+          return false;
+        }
+
+        return true;
+      });
+    }
+
     // Filter unread articles
     if (showUnreadOnly) {
       filtered = filtered.filter((article) => !isRead(article.id));
@@ -104,12 +128,12 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     }
 
     return sorted;
-  }, [initialArticles, selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly, isRead]);
+  }, [initialArticles, selectedCategory, selectedSources, searchQuery, dateFilters, sortBy, showUnreadOnly, isRead]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, selectedSources, searchQuery, sortBy, showUnreadOnly]);
+  }, [selectedCategory, selectedSources, searchQuery, dateFilters, sortBy, showUnreadOnly]);
 
   // Paginate articles
   const paginatedArticles = useMemo(() => {
@@ -130,10 +154,27 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     setSearchQuery(query);
   }, []);
 
+  // Keyboard shortcuts
+  const { currentIndex, showHelp, setShowHelp } = useKeyboardShortcuts({
+    articles: paginatedArticles,
+    onBookmark: (articleId) => toggleBookmark(articleId),
+    onOpen: (article) => {
+      markAsRead(article.id, article.url);
+      updateStreak(true);
+      window.open(article.url, '_blank', 'noopener,noreferrer');
+    },
+    onFocusSearch: () => {
+      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+      searchInput?.focus();
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <SearchBar onSearch={handleSearch} />
+
+        <AdvancedSearchPanel onFilterChange={setDateFilters} />
 
         <SortControls
           sortBy={sortBy}
@@ -152,6 +193,11 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           onSourceToggle={handleSourceToggle}
           onSelectAll={handleSelectAllSources}
           onClearAll={handleClearAllSources}
+        />
+
+        <TrendingTopics
+          articles={initialArticles}
+          onTopicClick={(topic) => setSearchQuery(topic)}
         />
 
         <div className="flex items-center justify-between">
@@ -194,8 +240,13 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
                 : 'flex flex-col gap-2'
             }
           >
-            {paginatedArticles.map((article) => (
-              <NewsCard key={article.id} article={article} viewMode={viewMode} />
+            {paginatedArticles.map((article, index) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                viewMode={viewMode}
+                isActive={index === currentIndex}
+              />
             ))}
           </div>
           
@@ -210,6 +261,9 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           )}
         </>
       )}
+
+      {/* Keyboard Shortcuts Help Modal */}
+      <KeyboardShortcutsHelp open={showHelp} onOpenChange={setShowHelp} />
     </div>
   );
 }

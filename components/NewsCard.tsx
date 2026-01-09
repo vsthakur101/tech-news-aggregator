@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { NewsArticle, ViewMode } from '@/types/news';
 import { formatDate, truncateText, calculateReadingTime } from '@/lib/utils';
 import { BookmarkButton } from './BookmarkButton';
+import { AddToCollectionButton } from './AddToCollectionButton';
 import { ExternalLink, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
@@ -14,6 +15,7 @@ import { useStreak } from '@/hooks/useStreak';
 interface NewsCardProps {
   article: NewsArticle;
   viewMode?: ViewMode;
+  isActive?: boolean;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -36,7 +38,7 @@ const SOURCE_LABELS: Record<string, string> = {
   nvd: 'NVD/CVE',
 };
 
-export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
+export function NewsCard({ article, viewMode = 'grid', isActive = false }: NewsCardProps) {
   const readingTime = calculateReadingTime(`${article.title} ${article.description}`);
   const { markAsRead, isRead } = useReadingHistory();
   const { updateStreak } = useStreak();
@@ -52,9 +54,11 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
   if (viewMode === 'compact') {
     return (
       <Card
+        data-article-id={article.id}
         className={cn(
           'group cursor-pointer transition-colors hover:bg-accent',
-          read && 'opacity-60'
+          read && 'opacity-60',
+          isActive && 'ring-2 ring-primary ring-offset-2'
         )}
         onClick={handleClick}
       >
@@ -75,7 +79,10 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
                 {formatDate(article.publishedAt)}
               </span>
             </div>
-            <BookmarkButton articleId={article.id} />
+            <div className="flex items-center gap-1">
+              <AddToCollectionButton articleId={article.id} />
+              <BookmarkButton articleId={article.id} />
+            </div>
           </div>
           <CardTitle className="line-clamp-1 text-base leading-tight">
             {article.title}
@@ -89,9 +96,11 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
   if (viewMode === 'list') {
     return (
       <Card
+        data-article-id={article.id}
         className={cn(
           'group cursor-pointer transition-all hover:shadow-lg',
-          read && 'opacity-60'
+          read && 'opacity-60',
+          isActive && 'ring-2 ring-primary ring-offset-2'
         )}
         onClick={handleClick}
       >
@@ -121,7 +130,10 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
                   {readingTime} min
                 </Badge>
               </div>
-              <BookmarkButton articleId={article.id} />
+              <div className="flex items-center gap-1">
+                <AddToCollectionButton articleId={article.id} />
+                <BookmarkButton articleId={article.id} />
+              </div>
             </div>
             <CardTitle className="line-clamp-2 text-lg leading-tight">
               {article.title}
@@ -145,9 +157,11 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
   // Grid view - default vertical card
   return (
     <Card
+      data-article-id={article.id}
       className={cn(
         'group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]',
-        read && 'opacity-60'
+        read && 'opacity-60',
+        isActive && 'ring-2 ring-primary ring-offset-2'
       )}
       onClick={handleClick}
     >
@@ -176,7 +190,10 @@ export function NewsCard({ article, viewMode = 'grid' }: NewsCardProps) {
               {readingTime} min
             </Badge>
           </div>
-          <BookmarkButton articleId={article.id} />
+          <div className="flex items-center gap-1">
+            <AddToCollectionButton articleId={article.id} />
+            <BookmarkButton articleId={article.id} />
+          </div>
         </div>
         <CardTitle className="line-clamp-2 text-lg leading-tight">
           {article.title}

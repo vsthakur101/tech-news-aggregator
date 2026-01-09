@@ -1,6 +1,8 @@
 # Tech & Cybersecurity News Aggregator - 17 Sources Edition
 
-A comprehensive Next.js application that aggregates tech and cybersecurity news from **17 diverse sources**, providing in-depth coverage from official tech company blogs, community platforms, security feeds, and vulnerability databases.
+A **feature-rich** Next.js application that aggregates tech and cybersecurity news from **17 diverse sources**, providing in-depth coverage from official tech company blogs, community platforms, security feeds, and vulnerability databases.
+
+**✨ Now with Phase 1 features:** Search history, date filtering, keyboard shortcuts, reading streaks, multiple view modes, and more!
 
 ## 🎯 Features
 
@@ -29,18 +31,40 @@ A comprehensive Next.js application that aggregates tech and cybersecurity news 
 
 **Currently Working: 16/17 sources** providing **227+ articles**
 
-### 🎨 Advanced Filtering
-- **Source Filtering** - Toggle individual sources on/off
+### 🎨 Advanced Filtering & Search
+- **Source Filtering** - Toggle individual sources on/off with Select All/Clear All
 - **Category Filtering** - Security, Web Dev, AI/ML, DevOps, Mobile, Open Source
-- **Real-time Search** - Search titles, descriptions, and tags
-- **Smart Counter** - Shows filtered article count
+- **Real-time Search** - Search titles, descriptions, and tags with debounce
+- **Search History** - Recent searches dropdown (last 10 searches)
+- **Date Range Filtering** - Filter by custom date ranges or quick filters (Today, Yesterday, Last 7/30 Days)
+- **Unread Filter** - Toggle to show only unread articles
+- **Smart Counter** - Shows filtered article count in real-time
+
+### 🎯 Enhanced User Experience
+- **Advanced Sorting** - Sort by date, source, or title
+- **Multiple View Modes** - Grid (default), List (horizontal), or Compact (dense) views
+- **Reading History** - Tracks read articles with visual indicators (dimmed opacity)
+- **Reading Streak** - Gamification with consecutive day tracking and motivational milestones
+- **Reading Time Estimates** - Shows estimated reading time for each article
+- **Pagination** - 12 articles per page with smooth navigation
+- **Cross-Tab Sync** - Reading history syncs across browser tabs in real-time
+
+### ⌨️ Keyboard Shortcuts
+Navigate the app efficiently with keyboard:
+- **j/k** - Navigate next/previous article
+- **o** - Open highlighted article
+- **b** - Bookmark highlighted article
+- **/** - Focus search bar
+- **?** - Show keyboard shortcuts help
+- **Esc** - Clear search/close modals
 
 ### ⚡ Core Features
 - **Bookmarks** - Save articles to read later (localStorage)
-- **Dark Mode** - Beautiful light/dark themes
+- **Dark Mode** - Beautiful light/dark themes with custom theming
 - **Server-Side Caching** - 5-10 minute revalidation for performance
 - **Auto Deduplication** - Removes duplicate articles across sources
 - **Responsive Design** - Perfect on mobile, tablet, and desktop
+- **Offline Support** - Works offline with service worker caching
 
 ## 🚀 Getting Started
 
@@ -142,10 +166,13 @@ npm run deploy
 - **Framework**: Next.js 16 (App Router with Turbopack)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4 + shadcn/ui
+- **UI Components**: Radix UI primitives (@radix-ui/react-dialog, @radix-ui/react-label, @radix-ui/react-select)
 - **RSS Parser**: rss-parser
 - **Dark Mode**: next-themes
 - **Icons**: lucide-react
-- **State**: React hooks + localStorage
+- **State Management**: React hooks (useState, useCallback, useMemo)
+- **Client Storage**: localStorage + IndexedDB (for future features)
+- **Styling Utilities**: class-variance-authority (cva)
 
 ## 📁 Project Structure
 
@@ -157,15 +184,29 @@ tech-news-aggregator/
 │   ├── page.tsx              # Home page with news feed
 │   └── globals.css           # Global styles + Tailwind
 ├── components/
-│   ├── ui/                   # shadcn/ui components
-│   ├── BookmarkButton.tsx    # Bookmark toggle
-│   ├── CategoryFilter.tsx    # Category filter chips
-│   ├── Header.tsx            # App header
-│   ├── NewsCard.tsx          # Article card
-│   ├── NewsFeed.tsx          # Main feed with filtering
-│   ├── SearchBar.tsx         # Debounced search
-│   ├── SourceFilter.tsx      # NEW: Source toggle filter
-│   └── ThemeToggle.tsx       # Dark mode toggle
+│   ├── ui/                   # shadcn/ui components (button, card, badge, etc.)
+│   │   ├── dialog.tsx        # Dialog component for modals
+│   │   ├── label.tsx         # Label component
+│   │   └── select.tsx        # Select dropdown component
+│   ├── AdvancedSearchPanel.tsx    # Date range filtering
+│   ├── BookmarkButton.tsx         # Bookmark toggle
+│   ├── CategoryFilter.tsx         # Category filter chips
+│   ├── Header.tsx                 # App header
+│   ├── KeyboardShortcutsHelp.tsx  # Keyboard shortcuts modal
+│   ├── NewsCard.tsx               # Article card with view modes
+│   ├── NewsFeed.tsx               # Main feed with filtering
+│   ├── Pagination.tsx             # Pagination controls
+│   ├── SearchBar.tsx              # Search with history dropdown
+│   ├── SortControls.tsx           # Sorting and view mode controls
+│   ├── SourceFilter.tsx           # Source toggle filter
+│   └── ThemeToggle.tsx            # Dark mode toggle
+├── hooks/
+│   ├── useBookmarks.ts      # Bookmark management
+│   ├── useKeyboardShortcuts.ts    # Keyboard navigation
+│   ├── useReadingHistory.ts       # Reading history tracking
+│   ├── useSearchHistory.ts        # Search history management
+│   ├── useStreak.ts               # Reading streak tracking
+│   └── useUserPreferences.ts      # User preferences (sort, view, etc.)
 ├── lib/
 │   ├── api/
 │   │   ├── devto.ts         # Dev.to API
@@ -178,9 +219,8 @@ tech-news-aggregator/
 │   │   └── nvd.ts           # NVD/CVE API client
 │   ├── aggregator.ts        # Combines all 17 sources
 │   ├── rss-parser.ts        # RSS feed parser utility
-│   └── utils.ts             # Helper functions
+│   └── utils.ts             # Helper functions (categorization, etc.)
 ├── types/news.ts            # TypeScript interfaces
-├── hooks/useBookmarks.ts    # Bookmark management
 ├── vercel.json              # Vercel deployment config
 └── .env.local               # API keys (git-ignored)
 ```
@@ -204,12 +244,64 @@ Articles auto-categorized using keyword matching:
 - **Mobile**: iOS, Android, React Native, Flutter
 - **Open Source**: GitHub, open source, contributions
 
-### Source Filtering
-NEW feature - users can:
-- Toggle any source on/off
-- See article count update in real-time
-- Combine with category and search filters
-- Filter persists during session
+### Advanced Filtering System
+Users can combine multiple filters:
+- **Source Filtering**: Toggle individual sources on/off with Select All/Clear All
+- **Category Filtering**: Filter by Security, Web Dev, AI/ML, DevOps, Mobile, Open Source
+- **Text Search**: Real-time search with debounce and search history
+- **Date Range**: Custom date ranges or quick filters (Today, Yesterday, Last 7/30 Days)
+- **Read Status**: Show all or unread only
+- **Sorting**: By date, source, or title
+- Filters persist during session via localStorage
+- Real-time article count updates
+
+### User Experience Enhancements
+- **Reading History**: Tracks clicked articles, dims read articles, syncs across tabs
+- **Reading Streak**: Gamification with consecutive day tracking and motivational milestones
+- **Keyboard Navigation**: Vim-style navigation (j/k) with visual highlighting
+- **Search History**: Recent searches dropdown with individual/bulk removal
+- **Pagination**: 12 articles per page with smooth scrolling
+- **View Modes**: Switch between Grid (cards), List (horizontal), or Compact (dense) layouts
+- **Reading Time**: Estimated reading time for each article
+
+## ✨ Phase 1 Features (Completed)
+
+All 16 Phase 1 features are now live:
+
+### 🔍 Enhanced Search
+- ✅ Search history with dropdown (last 10 searches)
+- ✅ Date range filtering with quick filters
+- ✅ Advanced search panel (collapsible)
+- ✅ Real-time search with debounce
+- ✅ Click outside to dismiss dropdowns
+
+### 📊 Advanced Controls
+- ✅ Sort by date, source, or title
+- ✅ View modes: Grid, List, Compact
+- ✅ Show unread only toggle
+- ✅ Select All / Clear All sources
+- ✅ Persistent preferences (localStorage)
+
+### 📖 Reading Experience
+- ✅ Reading history tracking
+- ✅ Reading streak with milestones (1, 3, 7, 14, 30, 50, 100 days)
+- ✅ Read articles dimmed (opacity 60%)
+- ✅ Cross-tab sync for reading history
+- ✅ Reading time estimates
+
+### ⌨️ Keyboard Shortcuts
+- ✅ j/k - Navigate articles with visual highlighting
+- ✅ o - Open article in new tab
+- ✅ b - Bookmark article
+- ✅ / - Focus search bar
+- ✅ ? - Show keyboard shortcuts help modal
+- ✅ Esc - Clear search / Close modals
+
+### 📄 Pagination
+- ✅ 12 articles per page
+- ✅ Smooth scroll to top on page change
+- ✅ Auto-reset page when filters change
+- ✅ "Showing X-Y of Z articles" counter
 
 ## 🔧 Fixing Non-Working Sources
 
@@ -269,6 +361,33 @@ Edit API clients:
 ```typescript
 fetch(url, { next: { revalidate: 300 } }) // 300 = 5 minutes
 ```
+
+## 📘 Usage Guide
+
+### How to Use Search Features
+1. **Basic Search**: Type in the search bar - results update in real-time
+2. **Search History**: Click the search bar to see recent searches, click any to reuse
+3. **Date Filtering**: Click "Advanced Search" to filter by date ranges or use quick filters
+4. **Clear Filters**: Use the "Clear" button in Advanced Search or "Clear All" in sources
+
+### How to Navigate with Keyboard
+1. Press **?** anytime to see all keyboard shortcuts
+2. Use **j/k** to navigate through articles (blue ring shows current article)
+3. Press **o** to open the highlighted article in a new tab
+4. Press **b** to bookmark the highlighted article
+5. Press **/** to quickly jump to the search bar
+
+### How to Customize Your View
+1. **Sorting**: Use the sort dropdown to sort by date, source, or title
+2. **View Modes**: Toggle between Grid (cards), List (horizontal), or Compact (dense)
+3. **Unread Only**: Click the "Unread Only" button to hide read articles
+4. **Sources**: Use "Select All" or "Clear All" to quickly manage source filters
+
+### How to Track Your Reading
+1. Your reading streak appears in the stats (consecutive days you've read articles)
+2. Read articles are dimmed (60% opacity) so you can easily spot new content
+3. Click any article to mark it as read and update your streak
+4. Your reading history syncs across all tabs automatically
 
 ## 🐛 Troubleshooting
 
@@ -331,13 +450,24 @@ npm run build
 This project demonstrates:
 - **Next.js 16** App Router & Server Components
 - **TypeScript** with strict type safety
+- **React Hooks** - useState, useCallback, useMemo, useEffect, useRef
+- **Custom Hooks** - Building reusable logic (useKeyboardShortcuts, useSearchHistory, useStreak)
 - **RSS Parsing** with rss-parser
 - **API Integration** with multiple sources
-- **State Management** with React hooks
-- **Caching Strategies** for performance
+- **State Management** with React hooks + localStorage
+- **Performance Optimization** - Memoization, debouncing, pagination
+- **Caching Strategies** for API responses
 - **Error Handling** with graceful fallbacks
-- **Dark Mode** implementation
-- **Responsive Design** with Tailwind
+- **Dark Mode** implementation with next-themes
+- **Responsive Design** with Tailwind CSS v4
+- **Radix UI** - Accessible component primitives
+- **Keyboard Navigation** - Global keyboard event handling
+- **Local Storage** - Persisting user data across sessions
+- **Cross-Tab Communication** - Storage events for real-time sync
+- **Modal Dialogs** - Building accessible modals
+- **Gamification** - Streak tracking and user engagement
+- **Advanced Filtering** - Combining multiple filter types
+- **Component Composition** - Building complex UIs from primitives
 
 ## 📝 License
 
@@ -362,9 +492,22 @@ Contributions welcome! Feel free to:
 
 **Built with:**
 - Next.js 16, TypeScript, Tailwind CSS v4
-- shadcn/ui components
-- rss-parser, next-themes, lucide-react
+- shadcn/ui components + Radix UI primitives
+- rss-parser, next-themes, lucide-react, class-variance-authority
 
 ---
+
+## 🎉 What's New in Phase 1
+
+This release brings **16 major features** to enhance your news reading experience:
+
+- 🔍 **Search History** - Never forget what you searched for
+- 📅 **Date Filtering** - Find articles from specific time periods
+- ⌨️ **Keyboard Shortcuts** - Navigate like a power user
+- 🎯 **Reading Streaks** - Build a daily reading habit
+- 📊 **Multiple Views** - Grid, List, or Compact layouts
+- 📖 **Reading History** - Track what you've read across tabs
+- 🎨 **Advanced Sorting** - Sort by date, source, or title
+- 📄 **Smart Pagination** - 12 articles per page with smooth navigation
 
 **Enjoy staying updated with the tech & security world! 🔒🚀**
