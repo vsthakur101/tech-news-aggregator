@@ -20,6 +20,8 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { TrendingTopics } from './TrendingTopics';
+import { RecommendationsPanel } from './RecommendationsPanel';
+import { ArticlePreviewModal } from './ArticlePreviewModal';
 
 interface NewsFeedProps {
   initialArticles: NewsArticle[];
@@ -31,6 +33,8 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilters, setDateFilters] = useState<DateRangeFilter>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewArticle, setPreviewArticle] = useState<NewsArticle | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const { isRead, readCount, markAsRead } = useReadingHistory();
   const { updateStreak } = useStreak();
   const { toggleBookmark } = useBookmarks();
@@ -154,14 +158,42 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
     setSearchQuery(query);
   }, []);
 
+  const handleArticleClick = useCallback((article: NewsArticle, index: number) => {
+    setPreviewArticle(article);
+    setPreviewIndex(index);
+    markAsRead(article.id, article.url);
+    updateStreak(true);
+  }, [markAsRead, updateStreak]);
+
+  const handlePreviewClose = useCallback(() => {
+    setPreviewArticle(null);
+  }, []);
+
+  const handlePreviewNext = useCallback(() => {
+    if (previewIndex < paginatedArticles.length - 1) {
+      const nextIndex = previewIndex + 1;
+      setPreviewIndex(nextIndex);
+      setPreviewArticle(paginatedArticles[nextIndex]);
+      markAsRead(paginatedArticles[nextIndex].id, paginatedArticles[nextIndex].url);
+    }
+  }, [previewIndex, paginatedArticles, markAsRead]);
+
+  const handlePreviewPrevious = useCallback(() => {
+    if (previewIndex > 0) {
+      const prevIndex = previewIndex - 1;
+      setPreviewIndex(prevIndex);
+      setPreviewArticle(paginatedArticles[prevIndex]);
+      markAsRead(paginatedArticles[prevIndex].id, paginatedArticles[prevIndex].url);
+    }
+  }, [previewIndex, paginatedArticles, markAsRead]);
+
   // Keyboard shortcuts
   const { currentIndex, showHelp, setShowHelp } = useKeyboardShortcuts({
     articles: paginatedArticles,
     onBookmark: (articleId) => toggleBookmark(articleId),
     onOpen: (article) => {
-      markAsRead(article.id, article.url);
-      updateStreak(true);
-      window.open(article.url, '_blank', 'noopener,noreferrer');
+      const index = paginatedArticles.findIndex(a => a.id === article.id);
+      handleArticleClick(article, index);
     },
     onFocusSearch: () => {
       const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
@@ -246,6 +278,7 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
                 article={article}
                 viewMode={viewMode}
                 isActive={index === currentIndex}
+                onClick={() => handleArticleClick(article, index)}
               />
             ))}
           </div>
@@ -261,6 +294,26 @@ export function NewsFeed({ initialArticles }: NewsFeedProps) {
           )}
         </>
       )}
+
+      {/* Personalized Recommendations */}
+      {filteredArticles.length > 0 && (
+        <RecommendationsPanel
+          allArticles={initialArticles}
+          viewMode={viewMode}
+          limit={6}
+          className="pt-8 border-t"
+        />
+      )}
+
+      {/* Article Preview Modal */}
+      <ArticlePreviewModal
+        article={previewArticle}
+        onClose={handlePreviewClose}
+        onNext={handlePreviewNext}
+        onPrevious={handlePreviewPrevious}
+        hasNext={previewIndex < paginatedArticles.length - 1}
+        hasPrevious={previewIndex > 0}
+      />
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsHelp open={showHelp} onOpenChange={setShowHelp} />

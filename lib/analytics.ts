@@ -152,3 +152,218 @@ export function calculateSourceMetrics(articles: NewsArticle[]): Record<string, 
 
   return sourceStats;
 }
+
+// Smart Recommendations Engine
+export interface ArticleScore {
+  article: NewsArticle;
+  score: number;
+  reasons: string[];
+}
+
+export function getRecommendations(
+  currentArticle: NewsArticle,
+  allArticles: NewsArticle[],
+  readArticleIds: string[],
+  bookmarkedIds: string[],
+  limit: number = 5
+): ArticleScore[] {
+  const scores: ArticleScore[] = [];
+
+  allArticles.forEach((article) => {
+    // Skip current article and already read articles
+    if (article.id === currentArticle.id || readArticleIds.includes(article.id)) {
+      return;
+    }
+
+    let score = 0;
+    const reasons: string[] = [];
+
+    // Same source: +5 points
+    if (article.source === currentArticle.source) {
+      score += 5;
+      reasons.push('Same source');
+    }
+
+    // Same category: +4 points
+    if (article.category === currentArticle.category) {
+      score += 4;
+      reasons.push('Same category');
+    }
+
+    // Matching tags: +2 per tag
+    const matchingTags = article.tags.filter((t) =>
+      currentArticle.tags.some((ct) => ct.toLowerCase() === t.toLowerCase())
+    );
+    if (matchingTags.length > 0) {
+      score += matchingTags.length * 2;
+      reasons.push(`${matchingTags.length} matching tag${matchingTags.length > 1 ? 's' : ''}`);
+    }
+
+    // Title similarity (simple keyword matching)
+    const currentKeywords = extractKeywords(currentArticle.title);
+    const articleKeywords = extractKeywords(article.title);
+    const commonKeywords = currentKeywords.filter((k) => articleKeywords.includes(k));
+    if (commonKeywords.length > 0) {
+      score += commonKeywords.length * 3;
+      reasons.push('Similar topic');
+    }
+
+    // Bookmarked by user before: +3 points (user interest)
+    if (bookmarkedIds.includes(article.id)) {
+      score += 3;
+      reasons.push('Previously bookmarked');
+    }
+
+    // Recent articles (within last 7 days): +2 points
+    const daysOld = (Date.now() - new Date(article.publishedAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysOld <= 7) {
+      score += 2;
+      reasons.push('Recent');
+    }
+
+    if (score > 0) {
+      scores.push({ article, score, reasons });
+    }
+  });
+
+  // Sort by score and return top N
+  return scores.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+// Extract keywords from text for similarity matching
+function extractKeywords(text: string): string[] {
+  // Remove common words and extract meaningful keywords
+  const commonWords = new Set([
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+    'from',
+    'up',
+    'about',
+    'into',
+    'through',
+    'during',
+    'is',
+    'are',
+    'was',
+    'were',
+    'be',
+    'been',
+    'being',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'should',
+    'could',
+    'may',
+    'might',
+    'must',
+    'can',
+  ]);
+
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 3 && !commonWords.has(word));
+}
+
+// Get personalized recommendations based on reading history
+export function getPersonalizedRecommendations(
+  allArticles: NewsArticle[],
+  readArticleIds: string[],
+  bookmarkedIds: string[],
+  limit: number = 10
+): ArticleScore[] {
+  if (readArticleIds.length === 0) {
+    // No reading history, return most recent articles
+    return allArticles
+      .filter((a) => !readArticleIds.includes(a.id))
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      .slice(0, limit)
+      .map((article) => ({
+        article,
+        score: 0,
+        reasons: ['Latest article'],
+      }));
+  }
+
+  const scores: ArticleScore[] = [];
+
+  // Find most common sources and categories from reading history
+  const sourceCount: Record<string, number> = {};
+  const categoryCount: Record<string, number> = {};
+
+  allArticles.forEach((article) => {
+    if (readArticleIds.includes(article.id)) {
+      sourceCount[article.source] = (sourceCount[article.source] || 0) + 1;
+      categoryCount[article.category] = (categoryCount[article.category] || 0) + 1;
+    }
+  });
+
+  // Get top sources and categories
+  const topSources = Object.keys(sourceCount).sort(
+    (a, b) => sourceCount[b] - sourceCount[a]
+  );
+  const topCategories = Object.keys(categoryCount).sort(
+    (a, b) => categoryCount[b] - categoryCount[a]
+  );
+
+  allArticles.forEach((article) => {
+    if (readArticleIds.includes(article.id)) {
+      return;
+    }
+
+    let score = 0;
+    const reasons: string[] = [];
+
+    // Favorite source
+    const sourceRank = topSources.indexOf(article.source);
+    if (sourceRank !== -1) {
+      score += 10 - sourceRank;
+      reasons.push('From favorite source');
+    }
+
+    // Favorite category
+    const categoryRank = topCategories.indexOf(article.category);
+    if (categoryRank !== -1) {
+      score += 8 - categoryRank;
+      reasons.push('Favorite category');
+    }
+
+    // Bookmarked: high interest
+    if (bookmarkedIds.includes(article.id)) {
+      score += 5;
+      reasons.push('Bookmarked');
+    }
+
+    // Recent (last 7 days)
+    const daysOld = (Date.now() - new Date(article.publishedAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysOld <= 7) {
+      score += 3;
+      reasons.push('Recent');
+    }
+
+    if (score > 0) {
+      scores.push({ article, score, reasons });
+    }
+  });
+
+  return scores.sort((a, b) => b.score - a.score).slice(0, limit);
+}

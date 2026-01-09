@@ -16,6 +16,7 @@ interface NewsCardProps {
   article: NewsArticle;
   viewMode?: ViewMode;
   isActive?: boolean;
+  onClick?: () => void;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -38,16 +39,15 @@ const SOURCE_LABELS: Record<string, string> = {
   nvd: 'NVD/CVE',
 };
 
-export function NewsCard({ article, viewMode = 'grid', isActive = false }: NewsCardProps) {
+export function NewsCard({ article, viewMode = 'grid', isActive = false, onClick }: NewsCardProps) {
   const readingTime = calculateReadingTime(`${article.title} ${article.description}`);
-  const { markAsRead, isRead } = useReadingHistory();
-  const { updateStreak } = useStreak();
+  const { isRead } = useReadingHistory();
   const read = isRead(article.id);
 
   const handleClick = () => {
-    markAsRead(article.id, article.url);
-    updateStreak(true); // Update streak when article is read
-    window.open(article.url, '_blank', 'noopener,noreferrer');
+    if (onClick) {
+      onClick();
+    }
   };
 
   // Compact view - text only, no images, dense

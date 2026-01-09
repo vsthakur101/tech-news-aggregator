@@ -8,7 +8,6 @@ import { Label } from './ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -95,15 +94,15 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-black text-white border-gray-800">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-white">
             <Folder className="h-5 w-5" />
             Manage Collections
           </DialogTitle>
-          <DialogDescription>
+          <div className="text-sm text-gray-400 mt-1">
             Organize your articles into custom collections
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -116,29 +115,31 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
 
           {isFormMode ? (
             // Create/Edit Form
-            <div className="space-y-4 border rounded-lg p-4 bg-accent/50">
+            <div className="space-y-4 border border-gray-800 rounded-lg p-4 bg-gray-900/50">
               <div className="space-y-2">
-                <Label htmlFor="name">Collection Name *</Label>
+                <Label htmlFor="name" className="text-gray-200">Collection Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Must Read, Tutorials, Inspiration"
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-gray-200">Description</Label>
                 <Input
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Optional description"
+                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Color</Label>
+                <Label className="text-gray-200">Color</Label>
                 <div className="flex gap-2 flex-wrap">
                   {COLLECTION_COLORS.map((color) => (
                     <button
@@ -147,8 +148,8 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                       className={cn(
                         'w-8 h-8 rounded-full border-2 transition-all',
                         formData.color === color
-                          ? 'border-primary scale-110'
-                          : 'border-transparent hover:scale-105'
+                          ? 'border-white scale-110'
+                          : 'border-gray-700 hover:scale-105'
                       )}
                       style={{ backgroundColor: color }}
                       title={color}
@@ -161,7 +162,7 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                 <Button onClick={handleSave} disabled={!formData.name.trim()} className="flex-1">
                   {isCreating ? 'Create Collection' : 'Save Changes'}
                 </Button>
-                <Button onClick={handleCancel} variant="outline">
+                <Button onClick={handleCancel} variant="outline" className="border-gray-700">
                   Cancel
                 </Button>
               </div>
@@ -170,7 +171,7 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
             // Collections List
             <div className="space-y-2">
               {collections.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-gray-400">
                   <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No collections yet</p>
                   <p className="text-sm">Create your first collection to get started</p>
@@ -179,7 +180,7 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                 collections.map((collection) => (
                   <div
                     key={collection.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors group"
+                    className="flex items-center justify-between p-3 rounded-lg border border-gray-800 hover:bg-gray-900/50 transition-colors group"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
@@ -187,13 +188,13 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                         style={{ backgroundColor: collection.color }}
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{collection.name}</h4>
+                        <h4 className="font-medium truncate text-white">{collection.name}</h4>
                         {collection.description && (
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-sm text-gray-400 truncate">
                             {collection.description}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           {collection.articleIds.length} article
                           {collection.articleIds.length !== 1 ? 's' : ''}
                         </p>
@@ -204,6 +205,7 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="hover:bg-gray-800"
                         onClick={() => handleEditClick(collection)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -211,9 +213,10 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="hover:bg-gray-800"
                         onClick={() => handleDelete(collection.id)}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4 text-red-400" />
                       </Button>
                     </div>
                   </div>
@@ -223,8 +226,8 @@ export function CollectionsManager({ open, onOpenChange }: CollectionsManagerPro
           )}
         </div>
 
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} variant="outline">
+        <DialogFooter className="border-t border-gray-800 pt-4">
+          <Button onClick={() => onOpenChange(false)} variant="outline" className="border-gray-700">
             <X className="h-4 w-4 mr-2" />
             Close
           </Button>

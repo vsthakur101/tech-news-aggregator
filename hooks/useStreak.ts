@@ -30,23 +30,37 @@ export function useStreak() {
       const stored = localStorage.getItem(STREAK_KEY);
       const lastVisit = localStorage.getItem(LAST_VISIT_KEY);
       const history = localStorage.getItem(STREAK_HISTORY_KEY);
-      
+
+      let loadedStreak = defaultStreak;
+
       if (stored) {
         const streakData = JSON.parse(stored) as StreakData;
         const historyData = history ? JSON.parse(history) : {};
-        
-        setStreak({
+
+        loadedStreak = {
           ...streakData,
           streakHistory: historyData,
-        });
+        };
+
+        setStreak(loadedStreak);
       }
-      
+
       // Check and update streak on app load
       if (lastVisit) {
-        checkAndUpdateStreak();
+        checkAndUpdateStreakWithData(loadedStreak);
       } else {
         // First time user
-        updateStreak(true);
+        const today = new Date().toISOString().split('T')[0];
+        const initialStreak: StreakData = {
+          currentStreak: 1,
+          longestStreak: 1,
+          lastVisitDate: today,
+          streakHistory: { [today]: true },
+        };
+        setStreak(initialStreak);
+        localStorage.setItem(STREAK_KEY, JSON.stringify(initialStreak));
+        localStorage.setItem(LAST_VISIT_KEY, today);
+        localStorage.setItem(STREAK_HISTORY_KEY, JSON.stringify(initialStreak.streakHistory));
       }
     } catch (error) {
       console.error('Failed to load streak data:', error);
@@ -55,10 +69,10 @@ export function useStreak() {
     }
   }, []);
 
-  const checkAndUpdateStreak = useCallback(() => {
+  const checkAndUpdateStreakWithData = useCallback((streakData: StreakData) => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const lastVisit = streak.lastVisitDate;
-    
+    const lastVisit = streakData.lastVisitDate;
+
     if (lastVisit === today) {
       // Already visited today, no change needed
       return;
@@ -68,24 +82,85 @@ export function useStreak() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-    let newStreak = streak.currentStreak;
-    
+    let newStreak = streakData.currentStreak;
+
     if (lastVisit === yesterdayStr) {
       // Consecutive day, increment streak
-      newStreak = streak.currentStreak + 1;
+      newStreak = streakData.currentStreak + 1;
+    } else if (lastVisit === null) {
+      // First time user
+      newStreak = 1;
     } else {
       // Streak broken, reset to 1
       newStreak = 1;
     }
 
-    updateStreak(true, newStreak);
-  }, [streak.currentStreak, streak.lastVisitDate]);
+    const newLongestStreak = Math.max(newStreak, streakData.longestStreak);
+
+    const updatedHistory = {
+      ...streakData.streakHistory,
+      [today]: true,
+    };
+
+    const newStreakData: StreakData = {
+      currentStreak: newStreak,
+      longestStreak: newLongestStreak,
+      lastVisitDate: today,
+      streakHistory: updatedHistory,
+    };
+
+    setStreak(newStreakData);
+
+    try {
+      localStorage.setItem(STREAK_KEY, JSON.stringify(newStreakData));
+      localStorage.setItem(LAST_VISIT_KEY, today);
+      localStorage.setItem(STREAK_HISTORY_KEY, JSON.stringify(updatedHistory));
+    } catch (error) {
+      console.error('Failed to save streak data:', error);
+    }
+  }, []);
+
+  const checkAndUpdateStreak = useCallback(() => {
+    checkAndUpdateStreakWithData(streak);
+  }, [streak, checkAndUpdateStreakWithData]);
 
   const updateStreak = useCallback((visitToday: boolean, customStreak?: number) => {
     const today = new Date().toISOString().split('T')[0];
-    const newStreak = customStreak !== undefined ? customStreak : (visitToday ? Math.max(streak.currentStreak, 1) : 0);
+
+    // If already visited today, no need to update
+    if (streak.lastVisitDate === today && streak.streakHistory[today]) {
+      return;
+    }
+
+    let newStreak: number;
+
+    if (customStreak !== undefined) {
+      newStreak = customStreak;
+    } else if (!visitToday) {
+      newStreak = 0;
+    } else {
+      // Check if this is a consecutive day
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      if (streak.lastVisitDate === yesterdayStr) {
+        // Consecutive day, increment
+        newStreak = streak.currentStreak + 1;
+      } else if (streak.lastVisitDate === today) {
+        // Same day, keep current
+        newStreak = streak.currentStreak;
+      } else if (streak.lastVisitDate === null || streak.currentStreak === 0) {
+        // First visit or after reset
+        newStreak = 1;
+      } else {
+        // Streak broken, reset to 1
+        newStreak = 1;
+      }
+    }
+
     const newLongestStreak = Math.max(newStreak, streak.longestStreak);
-    
+
     const updatedHistory = {
       ...streak.streakHistory,
       [today]: visitToday,
